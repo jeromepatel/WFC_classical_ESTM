@@ -115,6 +115,21 @@ def find_compatibility(matrix):
 #print(find_compatibility(input_matrix))
 
 def create_output_superposition_matrix(states, output_size):
+    '''
+    initialize the output matrix as superposition of all states in it with size output size
+
+    Parameters
+    ----------
+    states : array of all possible states
+    output_size : tuple 
+        numpy array.shape .
+
+    Returns
+    -------
+    numpy array 
+        output matrix initialized.
+
+    '''
     Height, Width = output_size
     output_matrix = []
     for x in range(Height):
@@ -125,11 +140,42 @@ def create_output_superposition_matrix(states, output_size):
     return np.array(output_matrix)
    
 def check_compatibility_tiles(tile, direction, neighbour, comp_list):
+    '''
+    check the constraint by finding the input in list 
+
+    Parameters
+    ----------
+    tile : char, input state(eg. 's') 
+
+    direction : tuple from DIR
+        given direction from tile state
+    neighbour : char
+        neighbour tile in direction dir from tile state.
+    comp_list : array 
+        consists of already defined constraints.
+
+    Returns
+    -------
+    true false based on availability of tuple
+
+    '''
     #checks if the tile neighbour pair is valid and is in compatibility list
     return (tile, direction, neighbour) in comp_list
 
 def find_min_entropy(weights,matrix):
-    
+    '''
+    returns min entropy state coordinates accord. to formula of shanon entropy 
+    Parameters
+    ----------
+    weights : simple array of weights of states in overall matrix
+    matrix : output matrix constisting of superposition states
+
+    Returns
+    -------
+    min_ent_state : tuple (x, y) coordinates 
+    calculated from formula ENT = log(sigma(w)) - log(w)/sigma(w) (sigma over all possible states in coordinate)
+
+    '''
     Height,Width = matrix.shape
     min_ent_state = None
     lowest_entropy = np.inf
@@ -156,6 +202,17 @@ def find_min_entropy(weights,matrix):
     return min_ent_state
 
 def collapse_state(weights, min_ent_state, matrix):
+    '''
+    collapses the state at given coordinates 
+    Parameters
+    ----------
+    min_ent_state : given coord where collapse happens accord. to shanon entropy 
+     (u know other parameters) 
+    Returns
+    -------
+    selected_state : state after the collapse at given coord.
+
+    '''
     #get proportions in which we wanna collapse the state accord. to weights
     x,y = min_ent_state
     assert(len(matrix[x][y]) != 1)
@@ -172,7 +229,18 @@ def collapse_state(weights, min_ent_state, matrix):
     return selected_state
 
 def propogate_collapse(coords, matrix, compatibility_list):
-    #check for first valid directions 
+    '''
+    propogates the collapse of a coordinate till it reaches the end or empties the queue
+    we propogates the collapse and removes the tile from neighbours if its not compatible with any of the 
+    combination of coord states, then we propogate these changes to their neighbours 
+
+    Parameters
+    ----------
+    coords : coordinate to propogate from (tuple)
+    u know others things
+
+    '''
+    #check for valid directions 
     #get all neighbours 
     #delete neighbours which contradicts with the new collapsed state
     queue = [coords]
@@ -201,6 +269,9 @@ def propogate_collapse(coords, matrix, compatibility_list):
 
     pass
 def check_collapsed(matrix):
+    '''
+    simple checking if all states are collapsed in output array 
+    '''
     for x in range(matrix.shape[0]):
         for y in range(matrix.shape[1]):
             if len(matrix[x][y]) != 1:
@@ -209,7 +280,15 @@ def check_collapsed(matrix):
 
 
 def collapse_wavefunction_superposition(weights,output_matrix,compatibility_list):
-    
+    '''
+    iteratively collapse wave function of output matrix until its fully collapsed 
+    Parameters
+    ----------
+    weights : dictionary of weights of all possible states input state
+    output_matrix : np array of superposition of states of size output size
+    compatibility_list : list of tuples defining the constrains accord. to input 
+
+    '''
     #it consists of multiple steps
     collapsed = False
     
@@ -228,41 +307,30 @@ def collapse_wavefunction_superposition(weights,output_matrix,compatibility_list
         collapsed = check_collapsed(output_matrix)
 
 def get_final_output(matrix):
+    #convert sets into final elements as only last 1 state is remaining in output matrix
     for x in range(matrix.shape[0]):
         for y in range(matrix.shape[1]):
             matrix[x][y] = matrix[x][y].pop()
             
     
 def waveFunctionCollapseAlgorithm(input_matrix, Height, Width):
-    
+    '''
+    order of wave function collapse algorithm, simple calling each functions 
+    Parameters
+    ----------
+    input_matrix : no need to define (simple input matrix )
+    dimentions of output matrix
+    Returns
+    -------
+    output_matrix : collapsed output matrix 
+
+    '''
     weights, comp_lst = find_compatibility(input_matrix)
     #create output matrix from superposition of input weights states
     output_matrix = create_output_superposition_matrix(set(weights.keys()),(Height,Width))
     #run exp, get example min entropy
     
     #output_matrix[1][0].remove('L')
-    # output_matrix[0][2].remove('L')
-    #print(output_matrix)
-    
-    
-    #experimental code
-    # min_entropy_state = find_min_entropy(weights, output_matrix)
-    # # print(min_entropy_state)
-    # # s = 0
-    # # l = 0
-    # # c = 0
-    # # for i in range(100):
-    # #     selected_state = collapse_state(weights,min_entropy_state,output_matrix)
-    # #     if selected_state == 'S':
-    # #         s +=1
-    # #     elif selected_state == 'C':
-    # #         c += 1
-    # #     elif selected_state == 'L':
-    # #         l +=1
-    # # print(f'S is {s}, C is {c}, L is {l}')
-    # selected_state = collapse_state(weights,min_entropy_state,output_matrix)       
-
-    # propogate_collapse(min_entropy_state, output_matrix,comp_lst)
     
     collapse_wavefunction_superposition(weights,output_matrix,comp_lst)
     get_final_output(output_matrix)
@@ -270,16 +338,15 @@ def waveFunctionCollapseAlgorithm(input_matrix, Height, Width):
     return output_matrix
     
     
-    
-#use wave function collapse algorithm for getting output 
-output = waveFunctionCollapseAlgorithm(input_matrix, 5, 10)
 
-
-render_colors(output)
-Display_matrix(output)
 
 def Display_matrix(matrix):
-        
+    '''
+    simple function adapted from reddit to print the output in tiled manner usign pygame
+    Parameters
+    ----------
+    matrix : matrix to print (input or output any )
+    '''
     pg.init()
     blocksize = 30
     
@@ -333,5 +400,11 @@ def Display_matrix(matrix):
                 
       
                 
-      
+    
+#use wave function collapse algorithm for getting output 
+output = waveFunctionCollapseAlgorithm(input_matrix, 5, 10)
+
+
+render_colors(output)
+Display_matrix(output)    
 #Display_matrix(input_matrix)
